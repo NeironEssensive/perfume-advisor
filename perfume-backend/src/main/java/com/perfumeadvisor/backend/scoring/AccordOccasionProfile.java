@@ -12,7 +12,8 @@ public final class AccordOccasionProfile {
             Occasion.EVERYDAY, 50,
             Occasion.DATE_NIGHT, 50,
             Occasion.SPECIAL_EVENT, 50,
-            Occasion.SPORT, 35);
+            Occasion.SPORT, 35,
+            Occasion.SCHOOL, 48);
 
     private static final Map<String, Map<Occasion, Integer>> PROFILES = build();
 
@@ -104,6 +105,7 @@ public final class AccordOccasionProfile {
             int dateNight,
             int specialEvent,
             int sport) {
+        int school = Math.round(0.55f * everyday + 0.45f * office);
         m.put(
                 accord,
                 Map.of(
@@ -111,6 +113,7 @@ public final class AccordOccasionProfile {
                         Occasion.EVERYDAY, everyday,
                         Occasion.DATE_NIGHT, dateNight,
                         Occasion.SPECIAL_EVENT, specialEvent,
-                        Occasion.SPORT, sport));
+                        Occasion.SPORT, sport,
+                        Occasion.SCHOOL, school));
     }
 }

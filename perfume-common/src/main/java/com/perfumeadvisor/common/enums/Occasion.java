@@ -5,5 +5,6 @@ public enum Occasion {
     EVERYDAY,
     DATE_NIGHT,
     SPECIAL_EVENT,
-    SPORT
+    SPORT,
+    SCHOOL
 }

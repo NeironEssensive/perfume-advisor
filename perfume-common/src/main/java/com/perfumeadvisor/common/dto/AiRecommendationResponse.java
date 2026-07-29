@@ -1,4 +1,6 @@
 package com.perfumeadvisor.common.dto;
 
-public record AiRecommendationResponse(PerfumeRecommendationDto perfume, String explanation) {
+import java.util.List;
+
+public record AiRecommendationResponse(List<PerfumeRecommendationDto> perfumes, String explanation) {
 }

@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
@@ -44,6 +46,8 @@ public class FragranticaCsvImportService {
     };
 
     private static final Charset CSV_CHARSET = Charset.forName("windows-1252");
+
+    private static final Pattern FRAGRANTICA_ID_PATTERN = Pattern.compile("(\\d+)\\.html$");
 
     private final BrandRepository brandRepository;
     private final PerfumeRepository perfumeRepository;
@@ -100,6 +104,7 @@ public class FragranticaCsvImportService {
             Set<String> seenPerfumes) {
         String perfumeName = humanize(requireField(record, "Perfume"));
         String brandName = humanize(requireField(record, "Brand"));
+        String sourceUrl = getOrNull(record, "url");
 
         Brand brand = brandCache.computeIfAbsent(key(brandName), k -> brandRepository.save(Brand.builder()
                 .name(brandName)
@@ -116,8 +121,8 @@ public class FragranticaCsvImportService {
                 .releaseYear(parseYear(getOrNull(record, "Year")))
                 .gender(parseGender(getOrNull(record, "Gender")))
                 .description(getOrNull(record, "Description"))
-                .imageUrl(getOrNull(record, "Image URL"))
-                .sourceUrl(getOrNull(record, "url"))
+                .imageUrl(deriveImageUrl(sourceUrl))
+                .sourceUrl(sourceUrl)
                 .ratingValue(parseDouble(getOrNull(record, "Rating Value")))
                 .ratingCount(parseInt(getOrNull(record, "Rating Count")))
                 .build();
@@ -160,6 +165,17 @@ public class FragranticaCsvImportService {
                     .build());
             rank++;
         }
+    }
+
+    private static String deriveImageUrl(String sourceUrl) {
+        if (sourceUrl == null) {
+            return null;
+        }
+        Matcher matcher = FRAGRANTICA_ID_PATTERN.matcher(sourceUrl);
+        if (!matcher.find()) {
+            return null;
+        }
+        return "https://fimgs.net/mdimg/perfume/375x500." + matcher.group(1) + ".jpg";
     }
 
     private List<String> splitListField(String raw) {

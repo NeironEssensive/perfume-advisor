@@ -12,7 +12,7 @@ public interface PerfumeAccordRepository extends JpaRepository<PerfumeAccord, Lo
     List<Object[]> findAllPerfumeAccordTriples();
 
     @Query(
-            "select pa.perfume.id, pa.accord.name from PerfumeAccord pa "
+            "select pa.perfume.id, pa.accord.name, pa.strength from PerfumeAccord pa "
                     + "where pa.perfume.id in :perfumeIds order by pa.strength desc")
     List<Object[]> findAccordNamesByPerfumeIds(@Param("perfumeIds") List<Long> perfumeIds);
 }
