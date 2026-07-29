@@ -25,3 +25,8 @@ springdoc:
 
 anthropic:
   api-key: ${ANTHROPIC_API_KEY:}
+
+perfume:
+  import:
+    enabled: false
+    csv-path: data/fragrantica_dataset.csv
