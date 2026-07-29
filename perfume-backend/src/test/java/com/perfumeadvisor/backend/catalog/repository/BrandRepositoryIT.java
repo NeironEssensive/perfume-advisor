@@ -11,10 +11,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Проверяет, что Flyway-миграция применяется к настоящему Postgres и JPA-сущности/репозитории
- * действительно работают против неё (а не только компилируются).
- */
 @SpringBootTest
 @Testcontainers
 class BrandRepositoryIT {

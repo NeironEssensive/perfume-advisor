@@ -34,13 +34,11 @@
             <version>${javafx.version}</version>
         </dependency>
 
-        <!-- DI без web-стека -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
 
-        <!-- HTTP-клиент к backend + JSON -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>

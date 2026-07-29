@@ -34,23 +34,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Импорт открытого датасета "Fragrantica.com Fragrance Dataset" (Kaggle, {@code fra_cleaned.csv})
- * в каталог.
- *
- * <p>Реальные колонки файла (разделитель {@code ;}): {@code url}, {@code Perfume}, {@code Brand},
- * {@code Country}, {@code Gender}, {@code Rating Value}, {@code Rating Count}, {@code Year},
- * {@code Top}, {@code Middle}, {@code Base}, {@code Perfumer1}, {@code Perfumer2},
- * {@code mainaccord1}..{@code mainaccord5}. {@code Perfume}/{@code Brand} приходят как URL-слаги
- * ("jean-paul-gaultier") — приводятся к читаемому виду. {@code Rating Value} использует запятую
- * как десятичный разделитель. Описание и фото в этой версии датасета отсутствуют — сохраняем
- * {@code url} страницы, чтобы можно было дозаполнить их позже.
- *
- * <p>Brand/Note/Accord резолвятся через in-memory кэш, а не через {@code findByNameIgnoreCase}
- * на каждой строке: SELECT перед INSERT форсирует flush и полностью ломает батчинг вставок
- * в Hibernate, а бренды/ноты/аккорды — небольшой закрытый набор значений, переиспользуемый
- * в тысячах строк.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -60,7 +43,6 @@ public class FragranticaCsvImportService {
         "mainaccord1", "mainaccord2", "mainaccord3", "mainaccord4", "mainaccord5"
     };
 
-    /** Файл {@code fra_cleaned.csv} сохранён в Windows-1252, не в UTF-8 (иначе валится на акцентах). */
     private static final Charset CSV_CHARSET = Charset.forName("windows-1252");
 
     private final BrandRepository brandRepository;
@@ -161,10 +143,6 @@ public class FragranticaCsvImportService {
         }
     }
 
-    /**
-     * В отличие от нот, аккорды в этом датасете лежат не одним списком, а в отдельных колонках
-     * {@code mainaccord1}..{@code mainaccord5}, уже упорядоченных по убыванию силы аккорда.
-     */
     private void linkAccords(Perfume perfume, CSVRecord record, Map<String, Accord> accordCache) {
         int rank = 0;
         for (String column : ACCORD_COLUMNS) {
@@ -184,11 +162,6 @@ public class FragranticaCsvImportService {
         }
     }
 
-    /**
-     * Разбивает значение ячейки на список: поддерживает как обычную строку через запятую
-     * ("Bergamot, Lemon"), так и python-репр списка ("['Bergamot', 'Lemon']"), который
-     * встречается в некоторых версиях датасета. Значение-заглушка "unknown" отбрасывается.
-     */
     private List<String> splitListField(String raw) {
         if (raw == null || raw.isBlank()) {
             return List.of();
@@ -204,11 +177,6 @@ public class FragranticaCsvImportService {
                 .toList();
     }
 
-    /**
-     * Приводит URL-слаг ("jean-paul-gaultier") к читаемому виду ("Jean Paul Gaultier").
-     * Эвристика — не всегда даёт идеальный регистр (аббревиатуры вроде "YSL"), такие случаи
-     * можно поправить вручную после импорта.
-     */
     private static String humanize(String slug) {
         String[] words = slug.split("[-_]+");
         StringBuilder result = new StringBuilder();
@@ -224,7 +192,6 @@ public class FragranticaCsvImportService {
         return result.toString();
     }
 
-    /** Ключ для in-memory кэшей/множеств — регистронезависимое сравнение имён. */
     private static String key(String value) {
         return value.toLowerCase(Locale.ROOT);
     }
@@ -253,9 +220,6 @@ public class FragranticaCsvImportService {
         return value == null ? null : value.intValue();
     }
 
-    /**
-     * В датасете десятичный разделитель — запятая ("1,42"), поэтому нормализуем перед парсингом.
-     */
     private Double parseDouble(String raw) {
         if (raw == null || raw.isBlank()) {
             return null;
