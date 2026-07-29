@@ -11,15 +11,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
-import java.util.HashSet;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -79,12 +75,4 @@ public class Perfume {
 
     @Column(name = "rating_count")
     private Integer ratingCount;
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "perfume_occasion",
-            joinColumns = @JoinColumn(name = "perfume_id"),
-            inverseJoinColumns = @JoinColumn(name = "occasion_tag_id"))
-    @Builder.Default
-    private Set<OccasionTag> occasions = new HashSet<>();
 }

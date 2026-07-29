@@ -36,3 +36,5 @@ perfume:
   import:
     enabled: false
     csv-path: data/fragrantica_dataset.csv
+  scoring:
+    enabled: false
