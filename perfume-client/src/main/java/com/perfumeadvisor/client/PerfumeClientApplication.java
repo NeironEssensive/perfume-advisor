@@ -1,17 +1,22 @@
 package com.perfumeadvisor.client;
 
+import com.perfumeadvisor.client.api.ApiClient;
+import com.perfumeadvisor.client.ui.MainView;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class PerfumeClientApplication extends Application {
 
     @Override
     public void start(Stage stage) {
-        StackPane root = new StackPane(new Label("Perfume Advisor"));
-        stage.setScene(new Scene(root, 800, 600));
+        String baseUrl = System.getProperty("backend.url", "http://localhost:8080");
+        ApiClient apiClient = new ApiClient(baseUrl);
+
+        MainView mainView = new MainView(apiClient);
+        Scene scene = new Scene(mainView, 960, 700);
+        scene.getStylesheets().add(getClass().getResource("/theme.css").toExternalForm());
+        stage.setScene(scene);
         stage.setTitle("Perfume Advisor");
         stage.show();
     }
