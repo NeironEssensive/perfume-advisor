@@ -12,8 +12,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -22,6 +20,8 @@ import javafx.util.Duration;
 
 public class QuickSearchPane extends VBox {
 
+    private static final int RESULT_LIMIT = 50;
+
     private final ApiClient apiClient;
     private final FilterBar filterBar = new FilterBar(true);
     private final VBox resultsBox = new VBox(10);
@@ -29,7 +29,6 @@ public class QuickSearchPane extends VBox {
     private final TextField searchField = new TextField();
     private final ComboBox<SortOption> sortCombo = new ComboBox<>();
     private final PauseTransition searchDebounce = new PauseTransition(Duration.millis(350));
-    private final Spinner<Integer> limitSpinner = new Spinner<>();
     private List<PerfumeRecommendationDto> currentResults = List.of();
     private boolean searchMode = false;
 
@@ -38,17 +37,13 @@ public class QuickSearchPane extends VBox {
         this.apiClient = apiClient;
         setPadding(new Insets(15));
 
-        limitSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 50));
-        limitSpinner.setEditable(true);
-        limitSpinner.setPrefWidth(80);
-
         Button searchButton = new Button("Найти");
         searchButton.setOnAction(e -> loadRecommendations());
 
         progressIndicator.setVisible(false);
         progressIndicator.setMaxSize(20, 20);
 
-        HBox controls = new HBox(10, new Label("Сколько показать:"), limitSpinner, searchButton, progressIndicator);
+        HBox controls = new HBox(10, searchButton, progressIndicator);
 
         searchField.setPromptText("Поиск по всему каталогу: бренд или название...");
         searchDebounce.setOnFinished(e -> onSearchTextSettled());
@@ -99,7 +94,7 @@ public class QuickSearchPane extends VBox {
         progressIndicator.setVisible(true);
         showPlaceholder("Загрузка...");
 
-        int limit = limitSpinner.getValue();
+        int limit = RESULT_LIMIT;
         var serverSort = SortSupport.toServerSort(sortCombo.getValue());
         Task<List<PerfumeRecommendationDto>> task = new Task<>() {
             @Override
@@ -116,7 +111,7 @@ public class QuickSearchPane extends VBox {
         progressIndicator.setVisible(true);
         showPlaceholder("Поиск...");
 
-        int limit = limitSpinner.getValue();
+        int limit = RESULT_LIMIT;
         Task<List<PerfumeRecommendationDto>> task = new Task<>() {
             @Override
             protected List<PerfumeRecommendationDto> call() {

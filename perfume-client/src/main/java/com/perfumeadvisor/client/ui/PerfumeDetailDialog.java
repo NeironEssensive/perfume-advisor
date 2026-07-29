@@ -5,7 +5,9 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -33,9 +35,11 @@ public final class PerfumeDetailDialog {
         scrollPane.getStyleClass().add("root");
 
         Scene scene = new Scene(scrollPane, 760, 560);
+        scene.setFill(Color.web("#1a1723"));
         scene.getStylesheets().add(PerfumeDetailDialog.class.getResource("/theme.css").toExternalForm());
         stage.setScene(scene);
-        stage.setMinWidth(700);
+        stage.getIcons().add(new Image(PerfumeDetailDialog.class.getResourceAsStream("/icon.png")));
+        stage.setResizable(false);
         stage.show();
     }
 }

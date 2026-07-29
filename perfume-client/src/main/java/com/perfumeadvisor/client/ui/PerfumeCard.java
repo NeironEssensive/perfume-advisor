@@ -26,11 +26,6 @@ public class PerfumeCard extends HBox {
     private static final double ACCORD_BAR_MAX_WIDTH = 260;
     private static final double ACCORD_BAR_HEIGHT = 24;
 
-    private static final String[] ACCORD_COLORS = {
-        "#e8e04a", "#3f7f7f", "#7a8f3a", "#b0403f", "#2f6b3a",
-        "#8a6fb0", "#c0834a", "#4a7fb0", "#a05a8a", "#6b8f8f"
-    };
-
     public PerfumeCard(PerfumeRecommendationDto perfume, boolean showScores) {
         super(18);
         getStyleClass().add("perfume-card");
@@ -81,9 +76,11 @@ public class PerfumeCard extends HBox {
 
         info.getChildren().addAll(title, meta, separator());
 
-        HBox notesTable = buildNotesTable(perfume);
-        if (!notesTable.getChildren().isEmpty()) {
-            info.getChildren().addAll(notesTable, separator());
+        addNotesSection(info, "Верхние ноты", perfume.topNotes());
+        addNotesSection(info, "Средние ноты", perfume.middleNotes());
+        addNotesSection(info, "Базовые ноты", perfume.baseNotes());
+        if (hasAnyNotes(perfume)) {
+            info.getChildren().add(separator());
         }
 
         if (perfume.accords() != null && !perfume.accords().isEmpty()) {
@@ -107,50 +104,66 @@ public class PerfumeCard extends HBox {
         return separator;
     }
 
-    private HBox buildNotesTable(PerfumeRecommendationDto perfume) {
-        HBox table = new HBox(24);
-        addNotesColumn(table, "Верхние", perfume.topNotes());
-        addNotesColumn(table, "Средние", perfume.middleNotes());
-        addNotesColumn(table, "Базовые", perfume.baseNotes());
-        return table;
+    private boolean hasAnyNotes(PerfumeRecommendationDto perfume) {
+        return !isEmpty(perfume.topNotes()) || !isEmpty(perfume.middleNotes()) || !isEmpty(perfume.baseNotes());
     }
 
-    private void addNotesColumn(HBox table, String caption, List<String> notes) {
-        if (notes == null || notes.isEmpty()) {
+    private boolean isEmpty(List<String> notes) {
+        return notes == null || notes.isEmpty();
+    }
+
+    private void addNotesSection(VBox info, String caption, List<String> notes) {
+        if (isEmpty(notes)) {
             return;
         }
-        VBox column = new VBox(4);
-        HBox.setHgrow(column, Priority.ALWAYS);
-
-        Label header = new Label(caption);
+        Label header = new Label(caption.toUpperCase());
         header.getStyleClass().add("section-label");
-        column.getChildren().add(header);
 
+        FlowPane grid = new FlowPane(12, 10);
         for (String note : notes) {
-            Label noteLabel = new Label(note);
-            noteLabel.getStyleClass().add("note-item");
-            noteLabel.setWrapText(true);
-            column.getChildren().add(noteLabel);
+            grid.getChildren().add(buildNoteCell(note));
         }
-        table.getChildren().add(column);
+
+        info.getChildren().addAll(header, grid);
+    }
+
+    private static final int NOTE_ICON_SIZE = 32;
+
+    private VBox buildNoteCell(String note) {
+        ImageView icon = new ImageView(EmojiRenderer.render(NoteIcons.iconFor(note), NOTE_ICON_SIZE));
+        icon.setFitWidth(NOTE_ICON_SIZE);
+        icon.setFitHeight(NOTE_ICON_SIZE);
+
+        Label name = new Label(note);
+        name.getStyleClass().add("note-item");
+        name.setWrapText(true);
+        name.setMaxWidth(80);
+        name.setAlignment(Pos.CENTER);
+        name.setStyle("-fx-text-alignment: center;");
+
+        VBox cell = new VBox(4, icon, name);
+        cell.setAlignment(Pos.TOP_CENTER);
+        cell.setMaxWidth(80);
+        return cell;
     }
 
     private VBox buildAccordBars(List<AccordDto> accords) {
         VBox bars = new VBox(4);
         int maxStrength = accords.stream().mapToInt(AccordDto::strength).max().orElse(1);
 
-        for (int i = 0; i < accords.size(); i++) {
-            AccordDto accord = accords.get(i);
+        for (AccordDto accord : accords) {
             double ratio = maxStrength == 0 ? 1 : (double) accord.strength() / maxStrength;
             double width = Math.max(ACCORD_BAR_MAX_WIDTH * ratio, 60);
 
+            String color = AccordColors.colorFor(accord.name());
             Rectangle bar = new Rectangle(width, ACCORD_BAR_HEIGHT);
             bar.setArcWidth(8);
             bar.setArcHeight(8);
-            bar.setStyle("-fx-fill: " + ACCORD_COLORS[i % ACCORD_COLORS.length] + ";");
+            bar.setStyle("-fx-fill: " + color + ";");
 
             Label label = new Label(accord.name());
-            label.setStyle("-fx-text-fill: #1c1b22; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 0 0 0 10;");
+            label.setStyle("-fx-text-fill: " + AccordColors.textColorFor(color)
+                    + "; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 0 0 0 10;");
 
             StackPane barPane = new StackPane(bar, label);
             barPane.setPrefWidth(ACCORD_BAR_MAX_WIDTH);
