@@ -2,7 +2,7 @@ spring:
   application:
     name: perfume-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/perfume_advisor
+    url: jdbc:postgresql://localhost:5433/perfume_advisor
     username: perfume
     password: perfume
   jpa:
