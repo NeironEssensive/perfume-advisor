@@ -1,0 +1,1 @@
+ALTER TABLE perfume ADD COLUMN source_url VARCHAR(500);

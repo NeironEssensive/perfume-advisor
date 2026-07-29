@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -27,7 +28,8 @@ import lombok.ToString;
 public class OccasionTag {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "occasion_tag_seq")
+    @SequenceGenerator(name = "occasion_tag_seq", sequenceName = "occasion_tag_id_seq", allocationSize = 50)
     private Long id;
 
     @Column(nullable = false, length = 100)

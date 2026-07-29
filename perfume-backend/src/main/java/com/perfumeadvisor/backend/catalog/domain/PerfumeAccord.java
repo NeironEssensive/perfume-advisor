@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -18,9 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-/**
- * Связь парфюма с аккордом и его силой (0-100) — как ширина полоски на Fragrantica.
- */
+
 @Entity
 @Table(name = "perfume_accord", uniqueConstraints = @UniqueConstraint(columnNames = {"perfume_id", "accord_id"}))
 @Getter
@@ -33,7 +32,8 @@ import lombok.ToString;
 public class PerfumeAccord {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "perfume_accord_seq")
+    @SequenceGenerator(name = "perfume_accord_seq", sequenceName = "perfume_accord_id_seq", allocationSize = 50)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

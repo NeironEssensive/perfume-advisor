@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
@@ -39,7 +40,8 @@ import lombok.ToString;
 public class Perfume {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "perfume_seq")
+    @SequenceGenerator(name = "perfume_seq", sequenceName = "perfume_id_seq", allocationSize = 50)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -64,6 +66,9 @@ public class Perfume {
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+
+    @Column(name = "source_url", length = 500)
+    private String sourceUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10)

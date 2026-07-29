@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -21,10 +22,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-/**
- * Насколько парфюм уместен в конкретный сезон (0-100) — используется фильтрацией
- * перед тем, как отдать кандидатов в LLM для финальной рекомендации.
- */
+
 @Entity
 @Table(name = "perfume_season_score", uniqueConstraints = @UniqueConstraint(columnNames = {"perfume_id", "season"}))
 @Getter
@@ -37,7 +35,11 @@ import lombok.ToString;
 public class PerfumeSeasonScore {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "perfume_season_score_seq")
+    @SequenceGenerator(
+            name = "perfume_season_score_seq",
+            sequenceName = "perfume_season_score_id_seq",
+            allocationSize = 50)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

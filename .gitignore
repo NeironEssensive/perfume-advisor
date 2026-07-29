@@ -23,3 +23,6 @@ Thumbs.db
 # Секреты / локальные переопределения
 .env
 application-local.yml
+
+# Сырые датасеты (большие, скачиваются вручную — см. README импортёра)
+/perfume-backend/data/
