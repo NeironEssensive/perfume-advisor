@@ -2,6 +2,11 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
 
+# Упаковка jpackage
+/dist/
+/pkg-staging/
+dependency-reduced-pom.xml
+
 # IDE
 .idea/
 *.iml
