@@ -37,10 +37,14 @@ public class PriceImportService {
             "shipping", "fast", "the", "and", "with", "her", "him");
 
     private static final Set<String> EXCLUDED_TITLE_MARKERS = Set.of(
-            "set of", "lot of", "bundle", "sample", "decant", "miniature", "travel size", "mini ");
+            "set of", "lot of", "bundle", "sample", "decant", "miniature", "travel size", "mini ",
+            "impression", "inspired by", "compare to", "dupe", "clone", "replica", "our version");
+
+    private static final Set<String> EXCLUDED_TYPE_MARKERS = Set.of(
+            "oil", "roll", "freshener", "deodorant", "pheromone", "gift set");
 
     private static final int MATCH_SEARCH_LIMIT = 200;
-    private static final int MIN_MATCH_SCORE = 2;
+    private static final int MIN_NAME_MATCH_SCORE = 1;
     private static final BigDecimal RUB_PER_USD = new BigDecimal("80");
 
     private final PerfumeRepository perfumeRepository;
@@ -99,10 +103,18 @@ public class PriceImportService {
         String brand = record.get("brand");
         String title = record.get("title");
         String priceRaw = record.get("price");
+        String type = record.get("type");
 
         String titleLower = title.toLowerCase(Locale.ROOT);
         for (String marker : EXCLUDED_TITLE_MARKERS) {
             if (titleLower.contains(marker)) {
+                return;
+            }
+        }
+
+        String typeLower = type.toLowerCase(Locale.ROOT);
+        for (String marker : EXCLUDED_TYPE_MARKERS) {
+            if (typeLower.contains(marker)) {
                 return;
             }
         }
@@ -117,24 +129,39 @@ public class PriceImportService {
             return;
         }
 
-        List<String> tokens = tokenize(brand + " " + title);
-        if (tokens.isEmpty()) {
+        List<String> brandTokens = tokenize(brand);
+        List<String> titleTokens = tokenize(title).stream().filter(t -> !brandTokens.contains(t)).toList();
+        if (brandTokens.isEmpty() || titleTokens.isEmpty()) {
             return;
         }
 
-        Map<Long, Integer> scoreById = new HashMap<>();
-        for (String token : tokens) {
-            String pattern = token.length() >= 6 ? token.substring(0, 4) : token;
-            for (Perfume perfume : perfumeRepository.searchByBrandOrName(pattern, PageRequest.of(0, MATCH_SEARCH_LIMIT))) {
-                scoreById.merge(perfume.getId(), 1, Integer::sum);
-                perfumeById.putIfAbsent(perfume.getId(), perfume);
+        Map<Long, Perfume> brandCandidates = new HashMap<>();
+        for (String token : brandTokens) {
+            for (Perfume perfume : perfumeRepository.searchByBrand(pattern(token), PageRequest.of(0, MATCH_SEARCH_LIMIT))) {
+                brandCandidates.putIfAbsent(perfume.getId(), perfume);
             }
         }
 
-        scoreById.entrySet().stream()
-                .filter(e -> e.getValue() >= MIN_MATCH_SCORE)
-                .max(Map.Entry.comparingByValue())
-                .ifPresent(e -> pricesByPerfumeId.computeIfAbsent(e.getKey(), k -> new ArrayList<>()).add(price));
+        List<String> titlePatterns = titleTokens.stream().map(this::pattern).toList();
+        Perfume bestMatch = null;
+        int bestScore = 0;
+        for (Perfume candidate : brandCandidates.values()) {
+            String nameLower = candidate.getName().toLowerCase(Locale.ROOT);
+            int score = (int) titlePatterns.stream().filter(nameLower::contains).count();
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = candidate;
+            }
+        }
+
+        if (bestMatch != null && bestScore >= MIN_NAME_MATCH_SCORE) {
+            perfumeById.putIfAbsent(bestMatch.getId(), bestMatch);
+            pricesByPerfumeId.computeIfAbsent(bestMatch.getId(), k -> new ArrayList<>()).add(price);
+        }
+    }
+
+    private String pattern(String token) {
+        return token.length() >= 6 ? token.substring(0, 4) : token;
     }
 
     private List<String> tokenize(String rawText) {

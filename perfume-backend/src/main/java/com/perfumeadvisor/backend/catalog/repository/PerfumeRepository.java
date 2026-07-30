@@ -40,4 +40,11 @@ public interface PerfumeRepository extends JpaRepository<Perfume, Long> {
             order by coalesce(p.ratingValue, 0) desc
             """)
     List<Perfume> searchByBrandOrName(@Param("query") String query, Pageable pageable);
+
+    @Query("""
+            select p from Perfume p
+            where lower(p.brand.name) like lower(concat('%', :query, '%'))
+            order by coalesce(p.ratingValue, 0) desc
+            """)
+    List<Perfume> searchByBrand(@Param("query") String query, Pageable pageable);
 }
