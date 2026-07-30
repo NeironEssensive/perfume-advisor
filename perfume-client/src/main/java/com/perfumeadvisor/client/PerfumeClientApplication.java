@@ -1,6 +1,7 @@
 package com.perfumeadvisor.client;
 
 import com.perfumeadvisor.client.api.ApiClient;
+import com.perfumeadvisor.client.favorites.FavoritesStore;
 import com.perfumeadvisor.client.ui.MainView;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -14,8 +15,9 @@ public class PerfumeClientApplication extends Application {
     public void start(Stage stage) {
         String baseUrl = System.getProperty("backend.url", "http://localhost:8080");
         ApiClient apiClient = new ApiClient(baseUrl);
+        FavoritesStore favoritesStore = new FavoritesStore();
 
-        MainView mainView = new MainView(apiClient);
+        MainView mainView = new MainView(apiClient, favoritesStore);
         Scene scene = new Scene(mainView, 960, 700);
         scene.setFill(Color.web("#1a1723"));
         scene.getStylesheets().add(getClass().getResource("/theme.css").toExternalForm());

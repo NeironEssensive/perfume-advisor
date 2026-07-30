@@ -1,5 +1,6 @@
 package com.perfumeadvisor.client.ui;
 
+import com.perfumeadvisor.client.favorites.FavoritesStore;
 import com.perfumeadvisor.common.dto.AccordDto;
 import com.perfumeadvisor.common.dto.PerfumeRecommendationDto;
 import java.awt.Desktop;
@@ -8,6 +9,7 @@ import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
@@ -25,13 +27,14 @@ public class PerfumeCard extends HBox {
     private static final double IMAGE_HEIGHT = 175;
     private static final double ACCORD_BAR_MAX_WIDTH = 260;
     private static final double ACCORD_BAR_HEIGHT = 24;
+    private static final int NOTE_ICON_SIZE = 32;
 
-    public PerfumeCard(PerfumeRecommendationDto perfume, boolean showScores) {
+    public PerfumeCard(PerfumeRecommendationDto perfume, boolean showScores, FavoritesStore favoritesStore) {
         super(18);
         getStyleClass().add("perfume-card");
         setPadding(new Insets(14));
 
-        getChildren().addAll(buildImage(perfume.imageUrl()), buildInfo(perfume, showScores));
+        getChildren().addAll(buildImage(perfume.imageUrl()), buildInfo(perfume, showScores, favoritesStore));
     }
 
     private ImageView buildImage(String imageUrl) {
@@ -50,13 +53,16 @@ public class PerfumeCard extends HBox {
         return imageView;
     }
 
-    private VBox buildInfo(PerfumeRecommendationDto perfume, boolean showScores) {
+    private VBox buildInfo(PerfumeRecommendationDto perfume, boolean showScores, FavoritesStore favoritesStore) {
         VBox info = new VBox(10);
         HBox.setHgrow(info, Priority.ALWAYS);
 
         Label title = new Label(perfume.brand() + " — " + perfume.name());
         title.getStyleClass().add("perfume-title");
         title.setWrapText(true);
+        HBox.setHgrow(title, Priority.ALWAYS);
+
+        HBox titleRow = new HBox(10, title, buildFavoriteButton(perfume, favoritesStore));
 
         FlowPane meta = new FlowPane(10, 8);
         meta.getChildren().add(chip(genderLabel(perfume.gender())));
@@ -74,7 +80,7 @@ public class PerfumeCard extends HBox {
         price.getStyleClass().add("price-tag");
         meta.getChildren().add(price);
 
-        info.getChildren().addAll(title, meta, separator());
+        info.getChildren().addAll(titleRow, meta, separator());
 
         addNotesSection(info, "Верхние ноты", perfume.topNotes());
         addNotesSection(info, "Средние ноты", perfume.middleNotes());
@@ -96,6 +102,26 @@ public class PerfumeCard extends HBox {
         }
 
         return info;
+    }
+
+    private Button buildFavoriteButton(PerfumeRecommendationDto perfume, FavoritesStore favoritesStore) {
+        Button button = new Button();
+        button.getStyleClass().add("favorite-toggle");
+        updateFavoriteButtonLabel(button, favoritesStore.isFavorite(perfume.id()));
+
+        button.setOnAction(e -> {
+            favoritesStore.toggle(perfume);
+            updateFavoriteButtonLabel(button, favoritesStore.isFavorite(perfume.id()));
+        });
+        return button;
+    }
+
+    private void updateFavoriteButtonLabel(Button button, boolean isFavorite) {
+        button.setText(isFavorite ? "★" : "☆");
+        button.getStyleClass().removeAll("favorite-toggle-active");
+        if (isFavorite) {
+            button.getStyleClass().add("favorite-toggle-active");
+        }
     }
 
     private Separator separator() {
@@ -126,8 +152,6 @@ public class PerfumeCard extends HBox {
 
         info.getChildren().addAll(header, grid);
     }
-
-    private static final int NOTE_ICON_SIZE = 32;
 
     private VBox buildNoteCell(String note) {
         ImageView icon = new ImageView(EmojiRenderer.render(NoteIcons.iconFor(note), NOTE_ICON_SIZE));

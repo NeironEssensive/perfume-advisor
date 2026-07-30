@@ -1,6 +1,7 @@
 package com.perfumeadvisor.client.ui;
 
 import com.perfumeadvisor.client.api.ApiClient;
+import com.perfumeadvisor.client.favorites.FavoritesStore;
 import com.perfumeadvisor.common.dto.AiRecommendationRequest;
 import com.perfumeadvisor.common.dto.AiRecommendationResponse;
 import com.perfumeadvisor.common.enums.Occasion;
@@ -19,15 +20,17 @@ import javafx.scene.layout.VBox;
 public class AiSearchPane extends VBox {
 
     private final ApiClient apiClient;
+    private final FavoritesStore favoritesStore;
     private final TextArea descriptionArea = new TextArea();
     private final Button askButton = new Button("Спросить ИИ");
     private final ProgressIndicator progressIndicator = new ProgressIndicator();
     private final Label statusLabel = new Label();
     private final VBox resultBox = new VBox(10);
 
-    public AiSearchPane(ApiClient apiClient) {
+    public AiSearchPane(ApiClient apiClient, FavoritesStore favoritesStore) {
         super(10);
         this.apiClient = apiClient;
+        this.favoritesStore = favoritesStore;
         setPadding(new Insets(15));
 
         descriptionArea.setPromptText("Опишите человека и повод, для кого подбираем аромат, "
@@ -101,8 +104,9 @@ public class AiSearchPane extends VBox {
 
         resultBox.getChildren().add(explanationLabel);
         for (var perfume : response.perfumes()) {
-            resultBox.getChildren().add(new PerfumeCard(perfume, false));
+            resultBox.getChildren().add(new PerfumeCard(perfume, false, favoritesStore));
         }
+        UiEffects.fadeIn(resultBox);
     }
 
     private void showError(Throwable throwable) {

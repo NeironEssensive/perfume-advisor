@@ -1,6 +1,7 @@
 package com.perfumeadvisor.client.ui;
 
 import com.perfumeadvisor.client.api.ApiClient;
+import com.perfumeadvisor.client.favorites.FavoritesStore;
 import com.perfumeadvisor.common.dto.PerfumeRecommendationDto;
 import java.util.List;
 import javafx.animation.PauseTransition;
@@ -23,6 +24,7 @@ public class QuickSearchPane extends VBox {
     private static final int RESULT_LIMIT = 50;
 
     private final ApiClient apiClient;
+    private final FavoritesStore favoritesStore;
     private final FilterBar filterBar = new FilterBar(true);
     private final VBox resultsBox = new VBox(10);
     private final ProgressIndicator progressIndicator = new ProgressIndicator();
@@ -32,9 +34,10 @@ public class QuickSearchPane extends VBox {
     private List<PerfumeRecommendationDto> currentResults = List.of();
     private boolean searchMode = false;
 
-    public QuickSearchPane(ApiClient apiClient) {
+    public QuickSearchPane(ApiClient apiClient, FavoritesStore favoritesStore) {
         super(10);
         this.apiClient = apiClient;
+        this.favoritesStore = favoritesStore;
         setPadding(new Insets(15));
 
         Button searchButton = new Button("Найти");
@@ -57,7 +60,7 @@ public class QuickSearchPane extends VBox {
         HBox.setHgrow(searchField, Priority.ALWAYS);
 
         resultsBox.setPadding(new Insets(5, 0, 0, 0));
-        showPlaceholder("Загрузка...");
+        showPlaceholder("⏳", "Загрузка...");
 
         ScrollPane scrollPane = new ScrollPane(resultsBox);
         scrollPane.setFitToWidth(true);
@@ -74,10 +77,8 @@ public class QuickSearchPane extends VBox {
         });
     }
 
-    private void showPlaceholder(String text) {
-        Label placeholder = new Label(text);
-        placeholder.getStyleClass().add("placeholder-label");
-        resultsBox.getChildren().setAll(placeholder);
+    private void showPlaceholder(String emoji, String text) {
+        resultsBox.getChildren().setAll(UiEffects.emptyState(emoji, text));
     }
 
     private void onSearchTextSettled() {
@@ -92,7 +93,7 @@ public class QuickSearchPane extends VBox {
     private void loadRecommendations() {
         searchMode = false;
         progressIndicator.setVisible(true);
-        showPlaceholder("Загрузка...");
+        showPlaceholder("⏳", "Загрузка...");
 
         int limit = RESULT_LIMIT;
         var serverSort = SortSupport.toServerSort(sortCombo.getValue());
@@ -109,7 +110,7 @@ public class QuickSearchPane extends VBox {
     private void runSearch(String query) {
         searchMode = true;
         progressIndicator.setVisible(true);
-        showPlaceholder("Поиск...");
+        showPlaceholder("🔍", "Поиск...");
 
         int limit = RESULT_LIMIT;
         Task<List<PerfumeRecommendationDto>> task = new Task<>() {
@@ -138,7 +139,7 @@ public class QuickSearchPane extends VBox {
 
         task.setOnFailed(e -> {
             progressIndicator.setVisible(false);
-            showPlaceholder("Не удалось загрузить данные");
+            showPlaceholder("⚠️", "Не удалось загрузить данные");
             showError(task.getException());
         });
 
@@ -149,15 +150,18 @@ public class QuickSearchPane extends VBox {
 
     private void render() {
         if (currentResults.isEmpty()) {
-            showPlaceholder("Ничего не найдено");
+            showPlaceholder("🔍", "Ничего не найдено");
             return;
         }
 
         List<PerfumeRecommendationDto> sorted =
                 currentResults.stream().sorted(SortSupport.comparatorFor(sortCombo.getValue())).toList();
 
-        resultsBox.getChildren().setAll(
-                sorted.stream().map(p -> new PerfumeRow(p, PerfumeDetailDialog::show)).toList());
+        resultsBox.getChildren().setAll(sorted.stream()
+                .map(p -> new PerfumeRow(p, perfume -> PerfumeDetailDialog.show(perfume, favoritesStore),
+                        favoritesStore, null))
+                .toList());
+        UiEffects.fadeIn(resultsBox);
     }
 
     private void showError(Throwable throwable) {

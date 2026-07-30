@@ -1,5 +1,6 @@
 package com.perfumeadvisor.client.ui;
 
+import com.perfumeadvisor.client.favorites.FavoritesStore;
 import com.perfumeadvisor.common.dto.PerfumeRecommendationDto;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -16,12 +17,12 @@ public final class PerfumeDetailDialog {
     private PerfumeDetailDialog() {
     }
 
-    public static void show(PerfumeRecommendationDto perfume) {
+    public static void show(PerfumeRecommendationDto perfume, FavoritesStore favoritesStore) {
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.setTitle(perfume.brand() + " — " + perfume.name());
 
-        PerfumeCard card = new PerfumeCard(perfume, true);
+        PerfumeCard card = new PerfumeCard(perfume, true, favoritesStore);
 
         Button closeButton = new Button("Закрыть");
         closeButton.setOnAction(e -> stage.close());

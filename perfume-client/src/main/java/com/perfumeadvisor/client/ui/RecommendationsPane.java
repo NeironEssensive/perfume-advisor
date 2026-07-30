@@ -1,6 +1,7 @@
 package com.perfumeadvisor.client.ui;
 
 import com.perfumeadvisor.client.api.ApiClient;
+import com.perfumeadvisor.client.favorites.FavoritesStore;
 import com.perfumeadvisor.common.dto.PerfumeRecommendationDto;
 import com.perfumeadvisor.common.enums.Occasion;
 import java.util.List;
@@ -21,6 +22,7 @@ public class RecommendationsPane extends VBox {
     private static final int SECTION_LIMIT = 20;
 
     private final ApiClient apiClient;
+    private final FavoritesStore favoritesStore;
     private final FilterBar filterBar = new FilterBar(false);
     private final VBox resultsBox = new VBox(10);
     private final ProgressIndicator progressIndicator = new ProgressIndicator();
@@ -28,9 +30,10 @@ public class RecommendationsPane extends VBox {
     private List<PerfumeRecommendationDto> currentResults = List.of();
     private Occasion selectedOccasion;
 
-    public RecommendationsPane(ApiClient apiClient) {
+    public RecommendationsPane(ApiClient apiClient, FavoritesStore favoritesStore) {
         super(10);
         this.apiClient = apiClient;
+        this.favoritesStore = favoritesStore;
         setPadding(new Insets(15));
 
         FlowPane occasionButtons = new FlowPane(10, 10);
@@ -50,9 +53,7 @@ public class RecommendationsPane extends VBox {
         progressIndicator.setMaxSize(20, 20);
 
         resultsBox.setPadding(new Insets(5, 0, 0, 0));
-        Label placeholder = new Label("Выберите повод выше");
-        placeholder.getStyleClass().add("placeholder-label");
-        resultsBox.getChildren().setAll(placeholder);
+        showPlaceholder("👆", "Выберите повод выше");
 
         ScrollPane scrollPane = new ScrollPane(resultsBox);
         scrollPane.setFitToWidth(true);
@@ -67,6 +68,10 @@ public class RecommendationsPane extends VBox {
         });
     }
 
+    private void showPlaceholder(String emoji, String text) {
+        resultsBox.getChildren().setAll(UiEffects.emptyState(emoji, text));
+    }
+
     private void onSortChanged() {
         if (selectedOccasion != null && SortSupport.isServerSortable(sortCombo.getValue())) {
             load(selectedOccasion);
@@ -78,9 +83,7 @@ public class RecommendationsPane extends VBox {
     private void load(Occasion occasion) {
         selectedOccasion = occasion;
         progressIndicator.setVisible(true);
-        Label loading = new Label("Загрузка...");
-        loading.getStyleClass().add("placeholder-label");
-        resultsBox.getChildren().setAll(loading);
+        showPlaceholder("⏳", "Загрузка...");
 
         var serverSort = SortSupport.toServerSort(sortCombo.getValue());
         Task<List<PerfumeRecommendationDto>> task = new Task<>() {
@@ -99,9 +102,7 @@ public class RecommendationsPane extends VBox {
 
         task.setOnFailed(e -> {
             progressIndicator.setVisible(false);
-            Label placeholder = new Label("Не удалось загрузить");
-            placeholder.getStyleClass().add("placeholder-label");
-            resultsBox.getChildren().setAll(placeholder);
+            showPlaceholder("⚠️", "Не удалось загрузить");
         });
 
         Thread thread = new Thread(task);
@@ -111,16 +112,17 @@ public class RecommendationsPane extends VBox {
 
     private void render() {
         if (currentResults.isEmpty()) {
-            Label placeholder = new Label("Ничего не найдено");
-            placeholder.getStyleClass().add("placeholder-label");
-            resultsBox.getChildren().setAll(placeholder);
+            showPlaceholder("🔍", "Ничего не найдено");
             return;
         }
 
         List<PerfumeRecommendationDto> sorted =
                 currentResults.stream().sorted(SortSupport.comparatorFor(sortCombo.getValue())).toList();
 
-        resultsBox.getChildren().setAll(
-                sorted.stream().map(p -> new PerfumeRow(p, PerfumeDetailDialog::show)).toList());
+        resultsBox.getChildren().setAll(sorted.stream()
+                .map(p -> new PerfumeRow(p, perfume -> PerfumeDetailDialog.show(perfume, favoritesStore),
+                        favoritesStore, null))
+                .toList());
+        UiEffects.fadeIn(resultsBox);
     }
 }

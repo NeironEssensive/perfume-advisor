@@ -1,8 +1,10 @@
 package com.perfumeadvisor.client.ui;
 
+import com.perfumeadvisor.client.favorites.FavoritesStore;
 import com.perfumeadvisor.common.dto.PerfumeRecommendationDto;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
@@ -16,13 +18,19 @@ public class PerfumeRow extends HBox {
     private static final double IMAGE_WIDTH = 55;
     private static final double IMAGE_HEIGHT = 75;
 
-    public PerfumeRow(PerfumeRecommendationDto perfume, Consumer<PerfumeRecommendationDto> onClick) {
+    public PerfumeRow(
+            PerfumeRecommendationDto perfume,
+            Consumer<PerfumeRecommendationDto> onClick,
+            FavoritesStore favoritesStore,
+            Runnable onFavoriteToggled) {
         super(12);
         getStyleClass().add("perfume-card");
         setPadding(new Insets(8, 12, 8, 8));
         setOnMouseClicked(e -> onClick.accept(perfume));
 
-        getChildren().addAll(buildImage(perfume.imageUrl()), buildInfo(perfume));
+        getChildren().addAll(
+                buildImage(perfume.imageUrl()), buildInfo(perfume),
+                buildFavoriteButton(perfume, favoritesStore, onFavoriteToggled));
     }
 
     private ImageView buildImage(String imageUrl) {
@@ -64,6 +72,31 @@ public class PerfumeRow extends HBox {
 
         info.getChildren().addAll(title, meta);
         return info;
+    }
+
+    private Button buildFavoriteButton(
+            PerfumeRecommendationDto perfume, FavoritesStore favoritesStore, Runnable onFavoriteToggled) {
+        Button button = new Button();
+        button.getStyleClass().add("favorite-toggle");
+        updateFavoriteButtonLabel(button, favoritesStore.isFavorite(perfume.id()));
+
+        button.setOnMouseClicked(e -> {
+            favoritesStore.toggle(perfume);
+            updateFavoriteButtonLabel(button, favoritesStore.isFavorite(perfume.id()));
+            if (onFavoriteToggled != null) {
+                onFavoriteToggled.run();
+            }
+            e.consume();
+        });
+        return button;
+    }
+
+    private void updateFavoriteButtonLabel(Button button, boolean isFavorite) {
+        button.setText(isFavorite ? "★" : "☆");
+        button.getStyleClass().removeAll("favorite-toggle-active");
+        if (isFavorite) {
+            button.getStyleClass().add("favorite-toggle-active");
+        }
     }
 
     private Label chip(String text) {
