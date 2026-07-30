@@ -1,88 +1,88 @@
 # Perfume Advisor
 
-Десктопное приложение для подбора парфюма: каталог из ~24 тысяч ароматов, рекомендации по поводу и сезону, полнотекстовый поиск, подбор через локальную LLM (Ollama) и избранное. Backend на Spring Boot, клиент — JavaFX.
+A desktop app for finding the right perfume: a catalog of ~24k fragrances, recommendations by occasion and season, full-text search, AI-assisted matching via a local LLM (Ollama), and favorites. Spring Boot backend, JavaFX client.
 
 <p align="center">
-  <img src="docs/screenshots/recommendations.png" width="45%" alt="Вкладка «Рекомендации»" />
-  <img src="docs/screenshots/detail-card.png" width="45%" alt="Карточка аромата с нотами и аккордами" />
+  <img src="docs/screenshots/recommendations.png" width="45%" alt="Recommendations tab" />
+  <img src="docs/screenshots/detail-card.png" width="45%" alt="Fragrance detail card with notes and accords" />
 </p>
 
-## Возможности
+## Features
 
-- **Рекомендации** — топ ароматов по поводу (офис, повседневный, свидание, особый случай, спорт, школа) и текущему сезону, с фильтром по полу и сортировкой.
-- **Быстрый поиск** — полнотекстовый поиск по каталогу (бренд/название), включая распространённые аббревиатуры (JPG, YSL, D&G, CK, TF...) и устойчивость к транслитерации.
-- **Подбор с ИИ** — свободное текстовое описание ("хочу зимний женский горьковатый аромат") превращается в детерминированный поиск по каталогу, а локальная LLM (Ollama) только объясняет выбор на русском языке.
-- **Избранное** — звёздочка на карточке добавляет аромат в отдельную вкладку; хранится локально в `~/.perfume-advisor/favorites.json`, без бэкенда.
-- **Карточка аромата** — фото, пирамида нот (верхние/средние/базовые) с иконками, аккорды в виде пропорциональных полос, цена (где есть данные), ссылка на Fragrantica.
+- **Recommendations** — top fragrances by occasion (office, everyday, date night, special event, sport, school) and the current season, with a gender filter and sorting.
+- **Quick search** — full-text search across the catalog (brand/name), including common brand abbreviations (JPG, YSL, D&G, CK, TF...) and transliteration tolerance.
+- **AI search** — a free-form description ("a warm bittersweet winter scent for her") is turned into a deterministic catalog search; a local LLM (Ollama) only explains the picks.
+- **Favorites** — a star on any card adds a fragrance to its own tab; stored locally at `~/.perfume-advisor/favorites.json`, no backend involved.
+- **Fragrance card** — photo, note pyramid (top/middle/base) with icons, accords as proportional bars, price (where available), and a link to Fragrantica.
 
-## Архитектура
+## Architecture
 
-Multi-module Maven проект на Java 21:
+A multi-module Maven project on Java 21:
 
-| Модуль | Назначение |
+| Module | Purpose |
 |---|---|
-| `perfume-common` | Общие DTO и enum'ы, используются и backend, и client |
-| `perfume-backend` | Spring Boot REST API: каталог, рекомендации, поиск, AI-подбор |
-| `perfume-client` | JavaFX-клиент — тонкий UI поверх REST API |
+| `perfume-common` | Shared DTOs and enums used by both backend and client |
+| `perfume-backend` | Spring Boot REST API: catalog, recommendations, search, AI matching |
+| `perfume-client` | JavaFX client — a thin UI on top of the REST API |
 
-**Стек:** Java 21, Spring Boot 3.3.5, PostgreSQL + Flyway, Redis, JavaFX 21, Ollama (локальная LLM), Maven.
+**Stack:** Java 21, Spring Boot 3.3.5, PostgreSQL + Flyway, Redis, JavaFX 21, Ollama (local LLM), Maven.
 
-## Быстрый старт
+## Getting started
 
-### 1. Инфраструктура
+### 1. Infrastructure
 
 ```bash
 docker compose up -d
 ```
 
-Поднимет Postgres (порт `5433`) и Redis (порт `6379`).
+Starts Postgres (port `5433`) and Redis (port `6379`).
 
-### 2. Ollama (для вкладки «Подбор с ИИ»)
+### 2. Ollama (for the AI search tab)
 
 ```bash
 ollama pull qwen2.5:3b
 ollama serve
 ```
 
-Без Ollama всё остальное приложение (рекомендации, поиск, избранное) работает нормально — сломается только вкладка AI-подбора.
+Without Ollama, the rest of the app (recommendations, search, favorites) works fine — only the AI search tab breaks.
 
-### 3. Данные каталога
+### 3. Catalog data
 
-Исходный датасет (Fragrantica, ~24k ароматов) не входит в репозиторий из-за размера — положите CSV в `perfume-backend/data/fragrantica_dataset.csv` и запустите backend с включённым импортом и скорингом:
+The source dataset (Fragrantica, ~24k fragrances) isn't included in the repo due to size — drop the CSV at `perfume-backend/data/fragrantica_dataset.csv` and run the backend with import and scoring enabled:
 
 ```bash
 mvn -pl perfume-backend spring-boot:run -Dspring-boot.run.arguments="--perfume.import.enabled=true --perfume.scoring.enabled=true"
 ```
 
-Это одноразовая операция: импортёр наполняет БД, скоринг считает совместимость каждого аромата с сезонами и поводами. При последующих обычных запусках эти флаги не нужны.
+This is a one-off operation: the importer populates the database, and scoring computes how well each fragrance fits each season/occasion. Regular runs afterward don't need these flags.
 
-Опционально — цены подтягиваются из CSV с листингами (например, eBay-датасет) отдельным прогоном:
+Optionally, prices can be pulled from a CSV of marketplace listings (e.g. an eBay dataset) in a separate run:
 
 ```bash
 mvn -pl perfume-backend spring-boot:run -Dspring-boot.run.arguments="--perfume.price-import.enabled=true --perfume.price-import.paths=/path/to/prices.csv"
 ```
 
-Можно передать несколько файлов через запятую. Цена проставляется только там, где алгоритм нашёл совпадение по бренду и характерным словам в названии — это не 100% каталога.
+Multiple files can be passed comma-separated. A price is only set where the matcher found both a brand match and a distinguishing name match — it won't cover the whole catalog.
 
-### 4. Обычный запуск backend
+### 4. Running the backend normally
 
 ```bash
 mvn -pl perfume-backend spring-boot:run
 ```
 
-Backend поднимется на `http://localhost:8080`. Swagger UI — `/swagger-ui.html`.
+The backend comes up on `http://localhost:8080`. Swagger UI is at `/swagger-ui.html`.
 
-### 5. Клиент
+### 5. Client
 
 ```bash
 mvn -pl perfume-client javafx:run
 ```
 
-По умолчанию клиент ходит на `http://localhost:8080`; адрес можно переопределить через `-Dbackend.url=http://host:8080`.
+The client talks to `http://localhost:8080` by default; override with `-Dbackend.url=http://host:8080`.
 
-## Готовый исполняемый файл (Windows)
+## Standalone executable (Windows)
 
-Клиент можно собрать в самодостаточный `.exe` со встроенной Java — устанавливать JDK на целевой машине не нужно:
+The client can be packaged into a self-contained `.exe` with an embedded Java runtime — no JDK needed on the target machine:
 
 ```bash
 mvn -pl perfume-client -am package
@@ -90,26 +90,26 @@ jpackage --type app-image --input perfume-client/target --main-jar perfume-clien
   --main-class com.perfumeadvisor.client.Launcher --name "Perfume Advisor" --icon perfume-client/src/main/resources/icon.ico
 ```
 
-Важно: это только клиент. Он всё равно обращается к backend по сети (по умолчанию `localhost:8080`), поэтому для запуска на другой машине backend должен быть доступен — либо развёрнут там же, либо клиент запущен с `-Dbackend.url=http://<адрес-backend>:8080`.
+Note: this only packages the client. It still talks to the backend over the network (`localhost:8080` by default), so running it on another machine requires the backend to be reachable — either deployed alongside it, or the client launched with `-Dbackend.url=http://<backend-address>:8080`.
 
 ## REST API
 
-| Метод | Путь | Описание |
+| Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/recommendations` | Рекомендации по `occasion` (обязателен), `gender`, `season`, `limit`, `sort` |
-| `GET` | `/api/recommendations/search` | Полнотекстовый поиск по `query`, `limit` |
-| `POST` | `/api/ai-recommendations` | Подбор по свободному текстовому описанию через Ollama |
+| `GET` | `/api/recommendations` | Recommendations by `occasion` (required), `gender`, `season`, `limit`, `sort` |
+| `GET` | `/api/recommendations/search` | Full-text search by `query`, `limit` |
+| `POST` | `/api/ai-recommendations` | Matching from a free-form description via Ollama |
 
-## Тесты
+## Tests
 
 ```bash
 mvn test
 ```
 
-Покрыты: транслитерация и извлечение предпочтений из текста для AI-поиска, ранжирование рекомендаций, репозитории (Testcontainers), утилиты клиента (цвета аккордов, иконки нот, сортировка).
+Covers: transliteration and preference extraction from text for AI search, recommendation ranking, repositories (Testcontainers), and client-side utilities (accord colors, note icons, sorting).
 
-## Известные ограничения
+## Known limitations
 
-- Цены есть не для всех ароматов — источник данных (eBay-листинги) покрывает только часть каталога и только мужские ароматы.
-- AI-подбор работает только при поднятом локальном Ollama; ключи внешних LLM-провайдеров не используются.
-- Избранное хранится локально в файле на диске — не синхронизируется между устройствами.
+- Prices aren't available for every fragrance — the data source (eBay listings) covers only part of the catalog, and only men's fragrances.
+- AI search requires a local Ollama instance; no external LLM provider keys are used.
+- Favorites are stored locally in a file on disk — not synced across devices.
